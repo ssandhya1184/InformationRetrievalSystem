@@ -5,16 +5,18 @@ from langchain_community.vectorstores import FAISS
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from langchain_groq import ChatGroq
-
+from dotenv import load_dotenv
 
 import os
 
 def summarize(doc):
-    # 1. Load PDF
-    print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!Coming here")
+
+    load_dotenv() 
+    api_key = os.getenv("GROQ_API_KEY")
+    # 1. Load PDF    
     loader = PyPDFLoader(doc)
     documents = loader.load()
-    print("1111111111")
+    
     # 2. Split text
     text_splitter = RecursiveCharacterTextSplitter(
         chunk_size=1000,
@@ -22,7 +24,7 @@ def summarize(doc):
     )
 
     docs = text_splitter.split_documents(documents)
-    print("222222")
+    
     # 3. Create embeddings
     embeddings = HuggingFaceEmbeddings(
         model_name="BAAI/bge-small-en"
@@ -30,20 +32,17 @@ def summarize(doc):
 
     # 4. Create FAISS vector store
     vectorstore = FAISS.from_documents(docs, embeddings)
-    print("444444")
+    
     # 5. Create retriever
     retriever = vectorstore.as_retriever(search_kwargs={"k":4})
 
-    # 6. Load local LLM
-    
-
-    os.environ["GROQ_API_KEY"] = "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"
+    # 6. Load local LLM   
 
     llm = ChatGroq(
         model="llama-3.1-8b-instant",
-        api_key="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"
+        api_key=api_key
     )
-    print("555555")
+    
     # 7. Prompt template
     prompt = ChatPromptTemplate.from_template("""
     You are a helpful assistant.
@@ -67,7 +66,7 @@ def summarize(doc):
         | llm
         | StrOutputParser()
     )
-    print("88888")
+    
     # 10. Run summarization
     summary = chain.invoke("Summarize the PDF")
 
